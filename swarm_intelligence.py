@@ -18,6 +18,10 @@ from simulator import ProjectileSimulator
 from model import TrebuchetController
 from trainer import TrebuchetTrainer
 
+# Import explainable AI components
+from explainable_ai.decision_tracker import DecisionTracker, get_global_tracker, decision_tracker_decorator
+from explainable_ai.audit_logger import AuditLogger, get_global_audit_logger, audit_log, AuditLevel, ComplianceFramework
+
 
 @dataclass
 class SwarmAgent:
@@ -227,6 +231,25 @@ class SwarmIntelligenceSystem:
             'coordination_quality': 0.0
         }
         
+        # Initialize explainability components
+        self.decision_tracker = get_global_tracker()
+        self.audit_logger = get_global_audit_logger()
+        
+        # Log system initialization
+        audit_log(
+            event_type="system_initialization",
+            actor="SwarmIntelligenceSystem",
+            action="initialize_swarm",
+            resource=f"swarm_{n_agents}_agents",
+            outcome="success",
+            details={
+                "n_agents": n_agents,
+                "field_size": field_size,
+                "initialization_timestamp": time.time()
+            },
+            audit_level=AuditLevel.BASIC
+        )
+        
     def _initialize_agents(self) -> List[SwarmAgent]:
         """Initialize swarm agents with diverse capabilities."""
         agents = []
@@ -339,6 +362,26 @@ class SwarmIntelligenceSystem:
     def _select_agents_for_mission(self, targets: List[Tuple[float, float]], 
                                  mission_type: str) -> List[SwarmAgent]:
         """Select optimal agents for the mission based on targets and requirements."""
+        # Track this decision for explainability
+        decision_id = self.decision_tracker.track_decision(
+            decision_type="agent_selection",
+            decision_maker="SwarmIntelligenceSystem._select_agents_for_mission",
+            input_params={
+                "targets": targets,
+                "mission_type": mission_type,
+                "available_agents": len(self.agents)
+            },
+            environmental_factors={
+                "field_size": self.field_size,
+                "communication_range": self.communication.communication_range
+            },
+            agent_states={
+                "specializations": {spec: len([a for a in self.agents if a.specialization == spec]) 
+                                 for spec in ["scout", "heavy_hitter", "precision", "coordinator", "generalist"]},
+                "average_energy": np.mean([a.energy_level for a in self.agents])
+            }
+        )
+        
         if mission_type == "coordinated_strike":
             # Select diverse team with good coverage
             selected = []
@@ -346,26 +389,85 @@ class SwarmIntelligenceSystem:
             # Always include a coordinator if available
             coordinators = [a for a in self.agents if a.specialization == "coordinator"]
             if coordinators:
-                selected.append(max(coordinators, key=lambda a: a.energy_level))
+                best_coordinator = max(coordinators, key=lambda a: a.energy_level)
+                selected.append(best_coordinator)
+                self.decision_tracker.add_reasoning_step(
+                    decision_id, 
+                    f"Selected coordinator agent {best_coordinator.id} with energy {best_coordinator.energy_level:.2f}"
+                )
             
             # Select agents based on target characteristics
             remaining_agents = [a for a in self.agents if a not in selected]
             
-            for target in targets:
+            for i, target in enumerate(targets):
                 # Find best agent for each target
+                suitability_scores = {
+                    a.id: self.communication._calculate_agent_suitability(a, target) 
+                    for a in remaining_agents
+                }
                 best_agent = max(remaining_agents, 
-                               key=lambda a: self.communication._calculate_agent_suitability(a, target))
+                               key=lambda a: suitability_scores[a.id])
+                
                 if best_agent not in selected:
                     selected.append(best_agent)
                     remaining_agents.remove(best_agent)
+                    self.decision_tracker.add_reasoning_step(
+                        decision_id,
+                        f"Assigned agent {best_agent.id} ({best_agent.specialization}) to target {i} with suitability {suitability_scores[best_agent.id]:.2f}"
+                    )
             
             # Add additional agents based on mission complexity
             additional_needed = min(len(targets) * 2, len(remaining_agents))
             selected.extend(remaining_agents[:additional_needed])
             
+            if additional_needed > 0:
+                self.decision_tracker.add_reasoning_step(
+                    decision_id,
+                    f"Added {additional_needed} additional agents for mission complexity"
+                )
+            
+            # Complete decision tracking
+            self.decision_tracker.complete_decision(
+                decision_id=decision_id,
+                outcome=f"Selected {len(selected)} agents for mission",
+                success=True,
+                execution_time_ms=0.0,  # Would be measured in real implementation
+                impact_metrics={
+                    "agents_selected": len(selected),
+                    "coverage_ratio": len(selected) / len(targets),
+                    "coordinator_included": any(a.specialization == "coordinator" for a in selected)
+                }
+            )
+            
+            # Log audit event
+            audit_log(
+                event_type="agent_selection",
+                actor="SwarmIntelligenceSystem",
+                action="select_mission_agents",
+                resource=f"mission_{mission_type}",
+                outcome="success",
+                details={
+                    "selected_agents": [a.id for a in selected],
+                    "agent_specializations": [a.specialization for a in selected],
+                    "targets_count": len(targets),
+                    "selection_criteria": mission_type
+                },
+                audit_level=AuditLevel.COMPLIANCE
+            )
+            
             return selected
         
-        return self.agents[:len(targets) * 2]  # Default selection
+        # Default selection with tracking
+        default_selected = self.agents[:len(targets) * 2]
+        self.decision_tracker.complete_decision(
+            decision_id=decision_id,
+            outcome=f"Used default selection: {len(default_selected)} agents",
+            success=True,
+            execution_time_ms=0.0,
+            impact_metrics={"agents_selected": len(default_selected)}
+        )
+        
+        return default_selected
     
     def _get_mission_guidance(self, targets: List[Tuple[float, float]]) -> Dict:
         """Get guidance from collective knowledge for mission planning."""
