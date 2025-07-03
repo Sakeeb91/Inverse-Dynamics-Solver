@@ -11,6 +11,14 @@ from typing import Tuple, List, Optional
 import joblib
 import os
 
+# Import explainability components
+try:
+    from explainable_ai.explainer_engine import get_global_explainer
+    from explainable_ai.audit_logger import audit_log, AuditLevel
+    EXPLAINABILITY_AVAILABLE = True
+except ImportError:
+    EXPLAINABILITY_AVAILABLE = False
+
 
 class TrebuchetController(BaseEstimator, RegressorMixin):
     """
@@ -115,6 +123,35 @@ class TrebuchetController(BaseEstimator, RegressorMixin):
         self.model.fit(X_norm, y_norm)
         
         self.is_fitted = True
+        
+        # Register with explainability engine
+        if EXPLAINABILITY_AVAILABLE:
+            try:
+                explainer = get_global_explainer()
+                explainer.register_ml_model(
+                    model_name="trebuchet_controller",
+                    model=self.model,
+                    feature_names=["target_distance", "wind_speed"]
+                )
+                
+                # Log model training
+                audit_log(
+                    event_type="model_training",
+                    actor="TrebuchetController",
+                    action="fit_model",
+                    resource="trebuchet_controller",
+                    outcome="success",
+                    details={
+                        "training_samples": len(X),
+                        "hidden_layers": self.hidden_layer_sizes,
+                        "activation": self.activation,
+                        "max_iter": self.max_iter
+                    },
+                    audit_level=AuditLevel.COMPLIANCE
+                )
+            except Exception as e:
+                print(f"Warning: Could not register model with explainability engine: {e}")
+        
         return self
     
     def predict(self, X: np.ndarray) -> np.ndarray:
