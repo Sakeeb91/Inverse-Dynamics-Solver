@@ -21,3 +21,9 @@ coverage.xml
 .pytest_cache
 .hypothesis
 .DS_Store
+
+# Demo and temporary files
+demo_*.html
+test_*.html
+*.tmp
+
