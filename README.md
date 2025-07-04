@@ -82,6 +82,12 @@ graph TB
 - **Real-Time Adaptation**: Dynamic task allocation based on environmental conditions and agent performance
 - **Formation Optimization**: Self-organizing tactical formations with optimal coverage strategies
 
+### **Explainable AI & Compliance** ⭐
+- **Decision Transparency**: Real-time decision tracking with SHAP/LIME explanations
+- **Regulatory Compliance**: Multi-framework support (GDPR, SOX, HIPAA, FAA, FDA)
+- **Audit Trail Management**: Comprehensive logging with configurable compliance levels
+- **Feature Importance Analysis**: Understanding which factors drive swarm decisions
+
 ### **Physics-Encoded Intelligence** 
 - **Differentiable Simulation**: Gradients flow through physics equations enabling end-to-end optimization
 - **Environmental Modeling**: Wind effects, air resistance, and gravitational dynamics with high fidelity
@@ -194,10 +200,13 @@ source swarm_env/bin/activate  # On Windows: swarm_env\Scripts\activate
 # 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Verify installation
+# 4. Install explainability extensions (optional)
+pip install shap lime seaborn
+
+# 5. Verify installation
 python test_basic.py
 
-# 5. Launch interactive platform
+# 6. Launch interactive platform
 streamlit run swarm_app.py
 ```
 
@@ -205,6 +214,7 @@ streamlit run swarm_app.py
 - **Web Interface**: http://localhost:8501
 - **API Documentation**: Available through Streamlit interface
 - **Live Demonstrations**: Interactive mission planning and execution
+- **Explainability Guide**: See [EXPLAINABILITY_GUIDE.md](EXPLAINABILITY_GUIDE.md) for detailed documentation
 
 ---
 
@@ -224,6 +234,12 @@ ROI analysis, market opportunity assessment, and scaling projections for investm
 
 ### **5. Evolution Laboratory**
 Observe autonomous learning and adaptation across multiple generations with performance tracking.
+
+### **6. Explainability Center** ⭐
+Transparent AI decision-making with SHAP/LIME explanations, decision flow visualizations, and feature importance analysis.
+
+### **7. Compliance Monitor** ⭐  
+Real-time regulatory compliance monitoring supporting GDPR, SOX, HIPAA, FAA, and FDA frameworks with automated audit trails.
 
 ---
 
@@ -266,6 +282,7 @@ Inverse-Dynamics-Solver/
 ├── 📚 Documentation & Testing
 │   ├── SWARM_INTELLIGENCE.md     # Technical architecture documentation
 │   ├── DEPLOYMENT.md             # Production deployment guide
+│   ├── EXPLAINABILITY_GUIDE.md   # ⭐ XAI & compliance documentation
 │   ├── PROJECT_SHOWCASE.md       # Comprehensive project overview
 │   ├── tests/                    # Unit test suites
 │   └── demo_results.py           # Live demonstration scripts
