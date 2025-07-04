@@ -768,7 +768,7 @@ elif page == "🔍 Explainability Center":
     if not EXPLAINABILITY_AVAILABLE:
         st.error("❌ Explainability components not available. Please install explainable_ai and compliance modules.")
         st.info("This feature requires the explainable AI extension to be installed and configured.")
-        return
+        st.stop()
     
     # Explainability dashboard tabs
     tab1, tab2, tab3, tab4 = st.tabs([
@@ -943,7 +943,7 @@ elif page == "⚖️ Compliance Monitor":
     if not EXPLAINABILITY_AVAILABLE:
         st.error("❌ Compliance monitoring not available. Please install compliance module.")
         st.info("This feature requires the compliance monitoring extension to be installed and configured.")
-        return
+        st.stop()
     
     # Compliance monitoring tabs
     tab1, tab2, tab3, tab4 = st.tabs([
